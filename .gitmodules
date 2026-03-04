@@ -1,0 +1,9 @@
+[submodule "aqi-agent-group-project"]
+	path = aqi-agent-group-project
+	url = https://github.com/Aneeshie/aqi-agent
+[submodule "search-methods"]
+	path = search-methods
+	url = https://github.com/Aneeshie/search-methods
+[submodule "captcha"]
+	path = captcha
+	url = https://github.com/Aneeshie/captcha
