@@ -10,14 +10,16 @@ This project implements the A* pathfinding algorithm to find an optimal path fro
 
 ```
 ugv-pathfinding/
-├── main.go                 # Entry point - runs the A* algorithm
+├── main.go                 # Entry point - runs A* and dynamic navigation
 ├── go.mod                  # Go module definition
 ├── astar/
 │   └── astar.go           # A* algorithm implementation
 ├── grid/
-│   └── grid.go            # Grid structure and initialization
+│   └── grid.go            # Grid structure and dynamic obstacle management
 ├── pq/
-│   └── priority_queue.go  # Priority queue implementation (for A* open set)
+│   └── priority_queue.go  # Priority queue implementation
+├── sensor/
+│   └── sensor.go          # Sensor-based obstacle detection and replanning
 └── utils/
     └── path.go            # Path utilities
 ```
@@ -42,25 +44,55 @@ go build -o ugv-pathfinding
 
 ## Expected Output
 
-When you run the program, you will see output similar to:
+When you run the program, you will see two phases of output:
+
+### Phase 1: Static Pathfinding
 
 ```
+=== STATIC PATHFINDING ===
 Path found!
-Path length: 138
-Nodes explored: 4892
-Execution time: 12.345ms
+Path length: 140
+Nodes explored: 2047
+Execution time: 1.660334ms
 ```
 
 **Output Explanation:**
 - **Path found!** - Indicates a path exists from start to goal
-- **Path length** - The number of steps in the found path (Manhattan distance)
-- **Nodes explored** - The number of nodes examined by the A* algorithm before finding the path
-- **Execution time** - How long the algorithm took to run
+- **Path length** - The number of steps in the found path
+- **Nodes explored** - The number of nodes examined by the A* algorithm
+- **Execution time** - Time for initial pathfinding
 
-If no path is found, you'll see:
+### Phase 2: Dynamic Obstacle Simulation
+
 ```
-No path found!
+=== DYNAMIC OBSTACLE SIMULATION ===
+Starting navigation with dynamic obstacles...
+
+[Step 1] Sensor detected 9 obstacles nearby at position (1, 0)
+[Step 2] Sensor detected 9 obstacles nearby at position (1, 1)
+...
+[Step 14] Dynamic obstacle detected nearby!
+[Step 15] Sensor detected 24 obstacles nearby at position (9, 6)
+...
+
+=== DYNAMIC NAVIGATION COMPLETE ===
+Final position: (68, 68)
+Goal position: (69, 69)
+Reached goal: true
+Total replans triggered: 3
+Total dynamic obstacles spawned: 5
+Total nodes explored (including replans): 8345
+Total navigation time: 45.234ms
 ```
+
+**Output Explanation:**
+- **Sensor detected X obstacles** - Real-time obstacle detection within sensor range
+- **Dynamic obstacle detected** - New obstacle spawned during navigation
+- **Path blocked by obstacle! Replanning** - Algorithm triggered replanning when obstacle blocks path
+- **Replan successful** - New path computed from current position
+- **Total replans** - Number of times the path was recalculated
+- **Total dynamic obstacles spawned** - How many new obstacles appeared during navigation
+- **Reached goal** - Whether the UGV successfully reached the destination despite dynamic obstacles
 
 ## Grid Structure
 
@@ -101,7 +133,50 @@ g := grid.NewGrid(100, 100, 30)  // 100x100 grid with 30% obstacle density
 // Set different start and goal positions
 start := grid.Cell{10, 10}
 goal := grid.Cell{90, 90}
+
+// Adjust sensor detection range
+s := sensor.NewSensor(7)  // sensor range of 7 cells (default is 5)
 ```
+
+## Dynamic Obstacle Simulation
+
+This project extends the basic A* pathfinding with real-world dynamic obstacle handling through:
+
+### Sensor Package (`sensor/sensor.go`)
+
+The sensor system simulates real-time obstacle detection and navigation replanning:
+
+**Key Features:**
+- **Obstacle Detection** - Detects obstacles within sensor range of the current position
+- **Dynamic Spawning** - Randomly spawns new obstacles ahead on the path during navigation
+- **Path Blocking Detection** - Checks if upcoming path cells become blocked by new obstacles
+- **Automatic Replanning** - Triggers A* recomputation from current position when path is blocked
+
+**How It Works:**
+
+1. **Navigation Phase**: As the UGV moves along the computed path, the sensor continuously scans for obstacles
+2. **Dynamic Obstacle Generation**: Random obstacles spawn every 5 steps with a 30% probability ahead on the path
+3. **Path Validation**: Before each move, the next 3 cells of the path are validated
+4. **Intelligent Replanning**: If an obstacle blocks the path, A* is called from the current position to the goal
+5. **Success Tracking**: Statistics on replans, obstacles encountered, and total computation time
+
+**Configuration:**
+
+```go
+s := sensor.NewSensor(5)  // Create sensor with 5-cell detection radius
+```
+
+The detection radius determines how far ahead the UGV can "see" obstacles. Larger radius = earlier detection but more computation.
+
+### Dynamic vs. Static Pathfinding
+
+| Aspect | Static A* | Dynamic Simulation |
+|--------|-----------|-------------------|
+| **Obstacles Known** | All upfront | Some appear during navigation |
+| **Replanning** | Never | When obstacles block path |
+| **Real-world** | Unrealistic | More realistic |
+| **Computation** | Single burst | Distributed (on-demand) |
+| **Success Rate** | May fail if obstacles appear | Adapts and succeeds |
 
 ## Algorithm Details
 
@@ -157,7 +232,8 @@ rows, cols := 100, 100             // 100x100 grid (slower)
 
 ## Package Descriptions
 
-- **astar** - Core A* algorithm with path reconstruction
-- **grid** - Grid management and obstacle generation
-- **pq** - Min-heap priority queue for efficient node selection
+- **astar** - Core A* algorithm with path reconstruction and heuristic evaluation
+- **grid** - Grid management with static obstacle generation and dynamic obstacle management (add/remove)
+- **pq** - Min-heap priority queue for efficient node selection in open set
+- **sensor** - Sensor-based real-time obstacle detection, dynamic obstacle simulation, and path validation with automatic replanning
 - **utils** - Helper functions for path operations
