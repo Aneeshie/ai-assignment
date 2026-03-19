@@ -35,3 +35,23 @@ func NewGrid(rows, cols int, density int) *Grid {
 func (g *Grid) IsValid(x, y int) bool {
 	return x >= 0 && x < g.Rows && y >= 0 && y < g.Cols && g.Data[x][y] == 0
 }
+
+func (g *Grid) AddObstacle(x, y int) bool {
+	if x >= 0 && x < g.Rows && y >= 0 && y < g.Cols {
+		if g.Data[x][y] == 0 {
+			g.Data[x][y] = 1
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Grid) RemoveObstacle(x, y int) bool {
+	if x >= 0 && x < g.Rows && y >= 0 && y < g.Cols {
+		if g.Data[x][y] == 1 {
+			g.Data[x][y] = 0
+			return true
+		}
+	}
+	return false
+}
