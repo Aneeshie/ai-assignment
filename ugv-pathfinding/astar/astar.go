@@ -2,9 +2,10 @@ package astar
 
 import (
 	"container/heap"
-	"dijkstra/pq"
-	"dijkstra/ugv-pathfinding/grid"
 	"math"
+
+	"ugv-pathfinding/grid"
+	"ugv-pathfinding/pq"
 )
 
 func heuristic(a, b grid.Cell) int {
@@ -62,4 +63,21 @@ func AStar(g *grid.Grid, start, goal grid.Cell) ([]grid.Cell, int, int) {
 	}
 
 	return nil, -1, nodesExplored
+}
+
+func reconstructPath(parent map[[2]int][2]int, start, goal grid.Cell) []grid.Cell {
+	path := []grid.Cell{}
+	current := [2]int{goal.X, goal.Y}
+
+	for current != [2]int{start.X, start.Y} {
+		path = append([]grid.Cell{{current[0], current[1]}}, path...)
+		var ok bool
+		current, ok = parent[current]
+		if !ok {
+			break
+		}
+	}
+
+	path = append([]grid.Cell{{start.X, start.Y}}, path...)
+	return path
 }
