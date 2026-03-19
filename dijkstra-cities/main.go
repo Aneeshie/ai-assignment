@@ -4,17 +4,29 @@ import (
 	"dijkstra/dijkstra"
 	"dijkstra/graph"
 	"fmt"
+	"os"
 )
 
 func main() {
-	graphData := graph.LoadGraphFromCSV("data/india_roads.csv")
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: go run main.go <source> <destination>")
+		return
+	}
 
-	source := "Delhi"
+	source := os.Args[1]
+	destination := os.Args[2]
+
+	graphData := graph.LoadGraphFromCSV("data/india_roads.csv")
 
 	distances := dijkstra.Run(graphData, source)
 
-	fmt.Println("Shortest distances from", source)
-	for city, d := range distances {
-		fmt.Println(city, "->", d, "km")
+	dist, ok := distances[destination]
+	if !ok {
+		fmt.Println("Destination city not found in graph")
+		return
 	}
+
+	fmt.Printf("Shortest distance from %s to %s: %d km\n",
+		source, destination, dist)
 }
+
